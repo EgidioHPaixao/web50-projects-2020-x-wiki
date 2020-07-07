@@ -1,4 +1,5 @@
 import markdown2
+import secrets
 
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
@@ -9,8 +10,9 @@ from . import util
 from markdown2 import Markdown
 
 class NewEntryForm(forms.Form):
-    title = forms.CharField(label="New Entry")
+    title = forms.CharField(label="Entry title")
     content = forms.CharField(widget=forms.Textarea)
+    edit = forms.BooleanField(initial=False, widget=forms.HiddenInput(), required=False)
 
 
 def index(request):
@@ -38,13 +40,14 @@ def newEntry(request):
         if form.is_valid():
             title = form.cleaned_data["title"]
             content = form.cleaned_data["content"]
-            if(util.get_entry(title) is None):
+            if(util.get_entry(title) is None or form.cleaned_data["edit"] is True):
                 util.save_entry(title,content)
                 return HttpResponseRedirect(reverse("entry", kwargs={'entry': title}))
             else:
                 return render(request, "encyclopedia/newEntry.html", {
                 "form": form,
-                "existing": True
+                "existing": True,
+                "entry": title
                 })
         else:
             return render(request, "encyclopedia/newEntry.html", {
@@ -57,3 +60,38 @@ def newEntry(request):
             "existing": False
         })    
 
+def edit(request, entry):
+    entryPage = util.get_entry(entry)
+    if entryPage is None:
+        return render(request, "encyclopedia/nonExistingEntry.html", {
+            "entryTitle": entry    
+        })
+    else:
+        form = NewEntryForm()
+        form.fields["title"].initial = entry        
+        form.fields["content"].initial = entryPage
+        form.fields["edit"].initial = True
+        return render(request, "encyclopedia/newEntry.html", {
+            "form": form
+        })        
+
+def random(request):
+    entries = util.list_entries()
+    randomEntry = secrets.choice(entries)
+    return HttpResponseRedirect(reverse("entry", kwargs={'entry': randomEntry}))
+
+def search(request):
+    value = request.GET.get('q','')
+    if(util.get_entry(value) is not None):
+        return HttpResponseRedirect(reverse("entry", kwargs={'entry': value }))
+    else:
+        subStringEntries = []
+        for entry in util.list_entries():
+            if value in entry:
+                subStringEntries.append(entry)
+
+        return render(request, "encyclopedia/index.html", {
+        "entries": subStringEntries,
+        "search": True,
+        "value": value
+    })
