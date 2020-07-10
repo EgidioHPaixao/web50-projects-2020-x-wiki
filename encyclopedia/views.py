@@ -10,8 +10,8 @@ from . import util
 from markdown2 import Markdown
 
 class NewEntryForm(forms.Form):
-    title = forms.CharField(label="Entry title")
-    content = forms.CharField(widget=forms.Textarea)
+    title = forms.CharField(label="Entry title", widget=forms.TextInput(attrs={'class' : 'form-control'}))
+    content = forms.CharField(widget=forms.Textarea(attrs={'class' : 'form-control col-md-8 col-lg-8', 'rows' : 10}))
     edit = forms.BooleanField(initial=False, widget=forms.HiddenInput(), required=False)
 
 
@@ -72,7 +72,9 @@ def edit(request, entry):
         form.fields["content"].initial = entryPage
         form.fields["edit"].initial = True
         return render(request, "encyclopedia/newEntry.html", {
-            "form": form
+            "form": form,
+            "edit": True,
+            "entryTitle": form.fields["title"].initial
         })        
 
 def random(request):
