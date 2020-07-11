@@ -68,12 +68,13 @@ def edit(request, entry):
         })
     else:
         form = NewEntryForm()
-        form.fields["title"].initial = entry        
+        form.fields["title"].initial = entry     
+        form.fields["title"].widget = forms.HiddenInput()
         form.fields["content"].initial = entryPage
         form.fields["edit"].initial = True
         return render(request, "encyclopedia/newEntry.html", {
             "form": form,
-            "edit": True,
+            "edit": form.fields["edit"].initial,
             "entryTitle": form.fields["title"].initial
         })        
 
